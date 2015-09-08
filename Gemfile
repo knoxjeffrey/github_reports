@@ -10,6 +10,7 @@ gem "activesupport"
 gem "dalli"
 gem "redis"
 gem "faraday"
+gem "dotenv"
 
 group :development, :test do
   gem "byebug"

@@ -4,7 +4,7 @@ A skeleton application for building custom reports with the GitHub API.
 
 ## Requirements
 
-A working Ruby 2.1.2 installation. If you are using a different version of Ruby, update Gemfile accordingly.
+A working Ruby 2.1.5 installation. If you are using a different version of Ruby, update Gemfile accordingly.
 
 ## Getting Started
 
