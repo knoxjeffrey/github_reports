@@ -2,6 +2,7 @@ require 'faraday'
 require 'json'
 require 'logger'
 require 'byebug'
+require_relative 'middleware/logging'
 
 module Reports
 
@@ -12,6 +13,8 @@ module Reports
   class RateLimitHit < Error; end
 
   User = Struct.new(:name, :location, :public_repos)
+  Repo = Struct.new(:name, :url)
+
   VALID_STATUS_CODES = [200, 302, 401, 403, 404, 422]
 
   class GitHubAPIClient
@@ -20,25 +23,44 @@ module Reports
 
     def initialize(github_token)
       @github_token = github_token
-      level = ENV["LOG_LEVEL"]
-      @logger = Logger.new(STDOUT)
-      @logger.formatter = proc do |serverity, time, progname, msg|
-        msg + "\n"
-      end
     end
 
     def user_info(username)
       headers = {"Authorization" => "token #{github_token}"}
       url = "https://api.github.com/users/#{username}"
 
-      start_time = Time.now
-      response = Faraday.get(url, nil, headers) # nil is the query parameters
+      response = connection.get(url, nil, headers) # nil is the query parameters
 
-      duration = Time.now - start_time
+      check_response_status(username, response)
 
-      log_output = '-> %s %s %d (%.3f s)' % [url, 'GET', response.status, duration]
-      logger.debug(log_output)
+      data = JSON.parse(response.body)
+      User.new(data["name"], data["location"], data["public_repos"])
+    end
 
+    def public_repos_for_user(username)
+      headers = {"Authorization" => "token #{github_token}"}
+
+      url = "https://api.github.com/users/#{username}/repos"
+
+      response = connection.get(url, nil, headers)
+
+      check_response_status(username, response)
+
+      data = JSON.parse(response.body)
+      data.map {|repository| Repo.new(repository["full_name"], repository["url"])}
+    end
+
+    def connection
+      # Connection objects manage the default properties and the middleware stack for fulfilling an HTTP request.
+      @connection ||= Faraday::Connection.new do |builder|
+        builder.use Middleware::Logging
+        builder.adapter Faraday.default_adapter
+      end
+    end
+
+    private
+
+    def check_response_status(username, response)
       if VALID_STATUS_CODES.include? response.status
         case response.status
         when 401
@@ -51,9 +73,6 @@ module Reports
       else
         raise RequestFailer, JSON.parse(response.body)['message']
       end
-
-      data = JSON.parse(response.body)
-      User.new(data["name"], data["location"], data["public_repos"])
     end
 
   end

@@ -29,6 +29,20 @@ module Reports
       exit 1 # raises the SystemExit exception
     end
 
+    desc "repositories USERNAME", "Load the repo stats for USERNAME"
+    def repositories(username)
+      puts "Fetching repository statistics for #{username}..."
+
+      client = GitHubAPIClient.new(ENV['GITHUB_TOKEN'])
+      repos = client.public_repos_for_user(username)
+
+      puts "#{username} has #{repos.size} public repos.\n\n"
+      repos.each { |repo| puts "#{repo.name} - #{repo.url}" }
+    rescue Error => e
+      puts "ERROR #{e.message}"
+      exit 1
+    end
+
     desc "console", "Open an RB session with all dependencies loaded and API defined."
     def console
       require 'irb'
