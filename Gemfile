@@ -5,12 +5,11 @@ ruby '2.1.5'
 gem "rake"
 gem "octokit"
 gem "thor"
-gem "dotenv"
 gem "activesupport"
 gem "dalli"
-gem "redis"
 gem "faraday"
 gem "dotenv"
+gem "redis"
 
 group :development, :test do
   gem "byebug"
