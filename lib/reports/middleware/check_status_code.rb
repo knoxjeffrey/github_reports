@@ -23,6 +23,8 @@ module Reports
               else
                 raise Nonexistentuser, "'#{parse_username(env.url)}' does not exist"
               end
+            when 422
+              raise GistCreationFailure, "Sorry, your gist was not created"
             end
           else
             raise RequestFailer, JSON.parse(response.body)['message']
@@ -42,7 +44,6 @@ module Reports
 
       def parse_repo(url)
         string_after_starred = /^https:\/\/api.github.com\/user\/starred\/(.*)/.match(url.to_s)
-        # removes any directories after the username
         # eg https://api.github.com/user/starred/knoxjeffrey/github_reports
         string_after_starred[1]
       end

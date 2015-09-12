@@ -17,6 +17,7 @@ module Reports
   class RequestFailer < Error; end
   class RateLimitHit < Error; end
   class ConfigurationError < Error; end
+  class GistCreationFailure < Error; end
 
   User = Struct.new(:name, :location, :public_repos)
   Repo = Struct.new(:name, :languages)
@@ -121,8 +122,12 @@ module Reports
     end
 
     def connection
+      ca_path = File.expand_path("~/.mitmproxy/mitmproxy-ca-cert.pem")
+      options = { proxy: 'https://localhost:8080',
+                  ssl: {ca_file: ca_path},
+                  url: "https://api.github.com" }
       # Connection objects manage the default properties and the middleware stack for fulfilling an HTTP request.
-      @connection ||= Faraday::Connection.new do |builder|
+      @connection ||= Faraday::Connection.new(options) do |builder|
         builder.use Middleware::CheckStatusCode
         builder.use Middleware::Authentication
         builder.use Middleware::JSONParsing
